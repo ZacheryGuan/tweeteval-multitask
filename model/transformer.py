@@ -30,7 +30,6 @@ class TokenAndPositionEmbedding(nn.Module):
         self.pos_emb = PositionalEncoding(embed_dim)
 
     def forward(self, inputs):
-        # todo
         inputs = self.token_emb(inputs)
         inputs = self.pos_emb(inputs)  # in, out B T hidden
         return inputs

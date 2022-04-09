@@ -185,11 +185,17 @@ print(f"Current hparams: "
       f"BATCH_SIZE={BATCH_SIZE}, OPT_STEP={OPT_STEP}, OPT_GAMMA={OPT_GAMMA}.")
 
 # training procedure
+cur_score, best_model = 0, None
 for epoch in range(1, EPOCHS + 1):
     epoch_start_time = time.time()
     train(train_dataloader, log_interval=10, tasks=tasks)
     validation_score, validation_accuracy = evaluate_test_and_validation(val_dataloader)
+    average_score = sum(validation_score.values()) / len(validation_score)
     scheduler.step()
+    if average_score > cur_score:  # save best model
+        cur_score = average_score
+        best_model = model.state_dict()
+        torch.save(model, "best.pt")
 
     print('-' * 59)
     print('| end of epoch {:3d} | time: {:5.2f}s'.format(epoch,
@@ -198,13 +204,13 @@ for epoch in range(1, EPOCHS + 1):
     print("Category:\t", "\t".join([str(category) for category in sorted(validation_score)]))
     print("Accuracy:", " ".join([f"{validation_accuracy[category]:7.4f}" for category in sorted(validation_score)]))
     print("Score:   ", " ".join([f"{validation_score[category]:7.4f}" for category in sorted(validation_score)]))
-    print("Average score: %.3f" % (sum(validation_score.values()) / len(validation_score)))
+    print("Average score: %.4f" % average_score)
     print("Current LR: %e" % optimizer.param_groups[0]['lr'])
 
     print('-' * 59)
 
 # test procedure
-
+model.load_state_dict(best_model)
 test_score, test_accuracy = evaluate_test_and_validation(test_dataloader)
 
 print("Category:\t", " ".join([f"{tid_2_name[category]:7}" for category in sorted(test_score)]))
